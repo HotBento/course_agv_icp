@@ -5,18 +5,20 @@
 #include <numeric>
 #include <vector>
 #include <Eigen/Eigen>
+#include <pcl/kdtree/kdtree.h>
 
 #include "ros/publisher.h"
 #include "ros/subscriber.h"
 #include "nav_msgs/Odometry.h"
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/LaserScan.h>
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Pose2D.h>
 
 using namespace std;
 using namespace Eigen;
 
-geometry_msgs::Pose pre_pose;
+geometry_msgs::Pose2D pre_pose;
+geometry_msgs::Pose2D now_pose;
 
 // structure of the nearest neighbor
 typedef struct{
@@ -91,7 +93,7 @@ icp::icp(ros::NodeHandle& n):
 	n.getParam("/icp/dis_th", dis_th);
 
     isFirstScan = true;
-    laser_sub = n.subscribe("/course_agv/laser/scan", 1, &icp::process, this);
+    laser_sub = n.subscribe("/scan", 1, &icp::process, this);
     odom_pub = n.advertise<nav_msgs::Odometry>("icp_odom", 1);
 }
 
@@ -223,9 +225,18 @@ NeighBor icp::findNearest(const Eigen::MatrixXd &src, const Eigen::MatrixXd &tar
 
 Eigen::Matrix3d icp::getTransform(const Eigen::MatrixXd &src, const Eigen::MatrixXd &tar)
 {
-    Eigen::Matrix3d T = Eigen::MatrixXd::Identity(3, 3);
+    Eigen::Matrix3d RT = Eigen::MatrixXd::Identity(3, 3);
     // #TODO: Please complete this function by yourself
-    return T;
+    Eigen::Vector2d src_center = src.colwise().mean();
+    Eigen::Vector2d tar_center = tar.colwise().mean();
+    Eigen::Matrix2d W = (src.transpose()-src_center)*(tar-tar_center.transpose());
+    Eigen::JacobiSVD<Eigen::Matrix2d> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix2d R = svd.matrixV()*svd.matrixU().transpose();
+    Eigen::Vector2d T = tar_center - R*src_center;
+    RT << R(0,0), R(0,1), T(0),
+          R(1,0), R(1,1), T(1),
+          0     , 0     , 1   ;
+    return RT;
 }
 
 float icp::calc_dist(const Eigen::Vector2d &pta, const Eigen::Vector2d &ptb)
