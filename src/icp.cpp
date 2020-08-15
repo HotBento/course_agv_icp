@@ -15,7 +15,6 @@
 
 using namespace std;
 using namespace Eigen;
-//lalala
 
 geometry_msgs::Pose pre_pose;
 
