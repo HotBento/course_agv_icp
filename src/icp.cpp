@@ -11,9 +11,12 @@
 #include "nav_msgs/Odometry.h"
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/LaserScan.h>
+#include <geometry_msgs/Pose.h>
 
 using namespace std;
 using namespace Eigen;
+
+geometry_msgs::Pose pre_pose;
 
 // structure of the nearest neighbor
 typedef struct{
