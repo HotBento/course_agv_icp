@@ -14,6 +14,7 @@
 
 using namespace std;
 using namespace Eigen;
+//lalala
 
 // structure of the nearest neighbor
 typedef struct{
